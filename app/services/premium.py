@@ -77,9 +77,9 @@ def calc_premium(price_krw: float, global_usd: float, usd_krw: float) -> dict:
     premium_pct = ((price_krw - fair_krw) / fair_krw) * 100 if fair_krw else 0
     return {
         "price_krw": price_krw,
-        "fair_price_krw": round(fair_krw, 2),
+        "fair_price_krw": round(fair_krw, 5),
         "premium_pct": round(premium_pct, 3),
-        "premium_krw": round(price_krw - fair_krw, 2),
+        "premium_krw": round(price_krw - fair_krw, 4),
     }
 
 
@@ -109,7 +109,7 @@ async def fetch_premium_data() -> dict:
             {
                 "reference_exchange": gp["exchange"],
                 "reference_price_usd": gp["price_usd"],
-                "reference_price_krw": round(gp["price_usd"] * usd_krw, 2),
+                "reference_price_krw": round(gp["price_usd"] * usd_krw, 5),
                 **premium,
             }
         )

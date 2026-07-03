@@ -12,12 +12,29 @@
     return document.getElementById(id);
   }
 
+  const PRICE_DECIMALS = { min: 4, max: 5 };
+
   function formatPrice(price, exchange) {
     if (price == null) return "-";
+    const opts = {
+      minimumFractionDigits: PRICE_DECIMALS.min,
+      maximumFractionDigits: PRICE_DECIMALS.max,
+    };
     if (exchange === "upbit") {
-      return "₩" + Number(price).toLocaleString("ko-KR", { maximumFractionDigits: 0 });
+      return "₩" + Number(price).toLocaleString("ko-KR", opts);
     }
-    return "$" + Number(price).toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+    return "$" + Number(price).toLocaleString("en-US", opts);
+  }
+
+  function applyPriceFormat() {
+    if (!candleSeries) return;
+    candleSeries.applyOptions({
+      priceFormat: {
+        type: "price",
+        precision: PRICE_DECIMALS.max,
+        minMove: state.exchange === "upbit" ? 0.0001 : 0.00001,
+      },
+    });
   }
 
   function formatVol(vol) {
@@ -105,6 +122,11 @@
       borderVisible: false,
       wickUpColor: "#16c784",
       wickDownColor: "#ea3943",
+      priceFormat: {
+        type: "price",
+        precision: PRICE_DECIMALS.max,
+        minMove: state.exchange === "upbit" ? 0.0001 : 0.00001,
+      },
     });
 
     volumeSeries = chart.addHistogramSeries({
@@ -233,6 +255,8 @@
       if (!initialized) {
         buildChart();
         initialized = true;
+      } else {
+        applyPriceFormat();
       }
 
       applyCandles(data.candles);

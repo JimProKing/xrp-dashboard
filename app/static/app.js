@@ -4,12 +4,36 @@ const $$ = (sel) => document.querySelectorAll(sel);
 let txMarker = null;
 let txAddress = "";
 
+const XRP_PRICE_DECIMALS = { min: 4, max: 5 };
+
 function formatNum(n, decimals = 2) {
   if (n == null || Number.isNaN(n)) return "-";
   return Number(n).toLocaleString("ko-KR", {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
+}
+
+function formatPriceUsd(n) {
+  if (n == null || Number.isNaN(n)) return "-";
+  return (
+    "$" +
+    Number(n).toLocaleString("en-US", {
+      minimumFractionDigits: XRP_PRICE_DECIMALS.min,
+      maximumFractionDigits: XRP_PRICE_DECIMALS.max,
+    })
+  );
+}
+
+function formatPriceKrw(n) {
+  if (n == null || Number.isNaN(n)) return "-";
+  return (
+    "₩" +
+    Number(n).toLocaleString("ko-KR", {
+      minimumFractionDigits: XRP_PRICE_DECIMALS.min,
+      maximumFractionDigits: XRP_PRICE_DECIMALS.max,
+    })
+  );
 }
 
 function formatXrp(n) {
@@ -57,8 +81,8 @@ async function loadOverview() {
     $("#burned-xrp").textContent = formatXrp(burn.burned);
     $("#burn-pct").textContent = `${formatNum(burn.burn_percentage, 4)}% 소각`;
     $("#supply-xrp").textContent = formatXrp(burn.current_supply);
-    $("#upbit-price").textContent = `₩${formatNum(premium.upbit.price_krw, 0)}`;
-    $("#global-price").textContent = `$${formatNum(premium.global_avg_usd, 4)}`;
+    $("#upbit-price").textContent = formatPriceKrw(premium.upbit.price_krw);
+    $("#global-price").textContent = formatPriceUsd(premium.global_avg_usd);
 
     const prem = premium.upbit_premium.premium_pct;
     const el = $("#kimchi-premium");
@@ -202,7 +226,7 @@ async function loadPremium() {
         (k) => `
       <tr>
         <td><span class="exchange-name">${k.exchange}</span></td>
-        <td class="num">₩${formatNum(k.price_krw, 0)}</td>
+        <td class="num">${formatPriceKrw(k.price_krw)}</td>
         <td class="num ${premiumClass(k.premium_vs_global.premium_pct)}">${k.premium_vs_global.premium_pct >= 0 ? "+" : ""}${formatNum(k.premium_vs_global.premium_pct, 3)}%</td>
         <td class="num">${formatNum(k.volume_24h, 0)} XRP</td>
         <td class="num ${k.change_rate >= 0 ? "positive" : "negative"}">${k.change_rate >= 0 ? "+" : ""}${formatNum(k.change_rate, 2)}%</td>
@@ -215,8 +239,8 @@ async function loadPremium() {
         (c) => `
       <tr>
         <td><span class="exchange-name">${c.reference_exchange}</span></td>
-        <td class="num">$${formatNum(c.reference_price_usd, 4)}</td>
-        <td class="num">₩${formatNum(c.reference_price_krw, 0)}</td>
+        <td class="num">${formatPriceUsd(c.reference_price_usd)}</td>
+        <td class="num">${formatPriceKrw(c.reference_price_krw)}</td>
         <td class="num ${premiumClass(c.premium_pct)}">${c.premium_pct >= 0 ? "+" : ""}${formatNum(c.premium_pct, 3)}%</td>
         <td class="num">${c.premium_krw >= 0 ? "+" : ""}₩${formatNum(c.premium_krw, 0)}</td>
       </tr>`
@@ -227,7 +251,7 @@ async function loadPremium() {
       <div class="premium-highlight">
         <div class="stat-label">업비트 기준 김치 프리미엄 (글로벌 평균 대비)</div>
         <div class="big ${premiumClass(prem.premium_pct)}">${prem.premium_pct >= 0 ? "+" : ""}${formatNum(prem.premium_pct, 3)}%</div>
-        <div class="stat-sub">업비트 ₩${formatNum(prem.price_krw, 0)} · 적정가 ₩${formatNum(prem.fair_price_krw, 0)} · USD/KRW ${formatNum(data.usd_krw_rate, 2)}</div>
+        <div class="stat-sub">업비트 ${formatPriceKrw(prem.price_krw)} · 적정가 ${formatPriceKrw(prem.fair_price_krw)} · USD/KRW ${formatNum(data.usd_krw_rate, 2)}</div>
       </div>
       <div class="section-title">국내 거래소</div>
       <div class="table-wrap" style="margin-bottom:8px">
