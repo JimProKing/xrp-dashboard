@@ -73,12 +73,13 @@ async def fetch_rich_list(limit: int = 100) -> list[dict]:
 
 async def fetch_burn_stats() -> dict:
     async with httpx.AsyncClient(timeout=15.0) as client:
-        ledger = await _xrpl_rpc(
+        result = await _xrpl_rpc(
             client,
             "ledger",
             [{"ledger_index": "validated", "transactions": False, "expand": False}],
         )
 
+    ledger = result.get("ledger", result)
     total_coins_drops = int(ledger["total_coins"])
     current_supply = total_coins_drops / DROPS_PER_XRP
     burned = INITIAL_SUPPLY_XRP - current_supply
