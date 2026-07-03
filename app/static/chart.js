@@ -12,29 +12,38 @@
     return document.getElementById(id);
   }
 
-  const PRICE_DECIMALS = { min: 4, max: 5 };
+  const USD_PRICE_DECIMALS = { min: 4, max: 5 };
+
+  function chartPriceFormat(exchange) {
+    if (exchange === "upbit") {
+      return { type: "price", precision: 0, minMove: 1 };
+    }
+    return { type: "price", precision: USD_PRICE_DECIMALS.max, minMove: 0.00001 };
+  }
 
   function formatPrice(price, exchange) {
     if (price == null) return "-";
-    const opts = {
-      minimumFractionDigits: PRICE_DECIMALS.min,
-      maximumFractionDigits: PRICE_DECIMALS.max,
-    };
     if (exchange === "upbit") {
-      return "₩" + Number(price).toLocaleString("ko-KR", opts);
+      return (
+        "₩" +
+        Number(price).toLocaleString("ko-KR", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        })
+      );
     }
-    return "$" + Number(price).toLocaleString("en-US", opts);
+    return (
+      "$" +
+      Number(price).toLocaleString("en-US", {
+        minimumFractionDigits: USD_PRICE_DECIMALS.min,
+        maximumFractionDigits: USD_PRICE_DECIMALS.max,
+      })
+    );
   }
 
   function applyPriceFormat() {
     if (!candleSeries) return;
-    candleSeries.applyOptions({
-      priceFormat: {
-        type: "price",
-        precision: PRICE_DECIMALS.max,
-        minMove: state.exchange === "upbit" ? 0.0001 : 0.00001,
-      },
-    });
+    candleSeries.applyOptions({ priceFormat: chartPriceFormat(state.exchange) });
   }
 
   function formatVol(vol) {
@@ -122,11 +131,7 @@
       borderVisible: false,
       wickUpColor: "#16c784",
       wickDownColor: "#ea3943",
-      priceFormat: {
-        type: "price",
-        precision: PRICE_DECIMALS.max,
-        minMove: state.exchange === "upbit" ? 0.0001 : 0.00001,
-      },
+      priceFormat: chartPriceFormat(state.exchange),
     });
 
     volumeSeries = chart.addHistogramSeries({

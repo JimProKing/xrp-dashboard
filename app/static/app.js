@@ -30,8 +30,8 @@ function formatPriceKrw(n) {
   return (
     "₩" +
     Number(n).toLocaleString("ko-KR", {
-      minimumFractionDigits: XRP_PRICE_DECIMALS.min,
-      maximumFractionDigits: XRP_PRICE_DECIMALS.max,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     })
   );
 }

@@ -6,16 +6,32 @@ XRP_SCAN = "https://api.xrpscan.com/api/v1"
 INITIAL_SUPPLY_XRP = 100_000_000_000
 DROPS_PER_XRP = 1_000_000
 
+BLOCKED_XRPL_HOSTS = ("xrplcluster.com",)
 DEFAULT_XRPL_RPC_URLS = [
     "https://xrpl.ws",
     "https://s1.ripple.com:51234",
     "https://s2.ripple.com:51234",
 ]
-XRPL_RPC_URLS = [
-    url.strip()
-    for url in os.environ.get("XRPL_RPC_URL", "").split(",")
-    if url.strip()
-] or DEFAULT_XRPL_RPC_URLS
+
+
+def _sanitize_rpc_urls(urls: list[str]) -> list[str]:
+    clean = []
+    for url in urls:
+        lowered = url.lower()
+        if any(host in lowered for host in BLOCKED_XRPL_HOSTS):
+            continue
+        clean.append(url)
+    return clean or DEFAULT_XRPL_RPC_URLS
+
+
+XRPL_RPC_URLS = _sanitize_rpc_urls(
+    [
+        url.strip()
+        for url in os.environ.get("XRPL_RPC_URL", "").split(",")
+        if url.strip()
+    ]
+    or DEFAULT_XRPL_RPC_URLS
+)
 XRPL_RETRY_CODES = {402, 403, 429, 500, 502, 503, 504}
 
 
