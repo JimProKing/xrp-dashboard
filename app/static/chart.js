@@ -180,10 +180,6 @@
     });
   }
 
-  function usdPriceExchange(dataSource) {
-    return dataSource === "upbit" ? "upbit" : "binance";
-  }
-
   const KRAKEN_INTERVAL_MAP = { "1m": 1, "5m": 5, "15m": 15, "1h": 60, "4h": 240, "1d": 1440 };
 
   function connectKrakenWs(interval, wsInterval) {
