@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XRP On-Chain Dashboard</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="logo">
+        <div class="logo-icon">XRP</div>
+        <div>
+          <h1>XRP On-Chain</h1>
+          <p>온체인 데이터 대시보드</p>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <div class="contact-links">
+          <span class="contact-link">caramel2516@naver.com</span>
+          <span class="contact-divider">|</span>
+          <a href="#" class="contact-link kakao-link" data-kakao-id="caramel112">카카오 <strong>caramel112</strong></a>
+        </div>
+        <button class="refresh-btn" id="refresh-btn">↻ 새로고침</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <section class="hero">
+      <div class="hero-top">
+        <div class="hero-title">
+          <div class="hero-avatar">XRP</div>
+          <div>
+            <h2>리플코인 (XRP)</h2>
+            <span>XRPL 온체인 · 거래소 · 프리미엄 통합 대시보드</span>
+          </div>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">총 소각량</div>
+          <div class="stat-value" id="burned-xrp">-</div>
+          <div class="stat-sub" id="burn-pct">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">현재 유통량</div>
+          <div class="stat-value" id="supply-xrp">-</div>
+          <div class="stat-sub">XRPL 실시간</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">업비트 XRP</div>
+          <div class="stat-value" id="upbit-price">-</div>
+          <div class="stat-sub">KRW-XRP</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">글로벌 평균</div>
+          <div class="stat-value" id="global-price">-</div>
+          <div class="stat-sub">USD 기준</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">김치 프리미엄</div>
+          <div class="stat-value" id="kimchi-premium">-</div>
+          <div class="stat-sub">업비트 기준</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="tabs-wrap">
+      <nav class="tabs">
+        <button class="tab active" data-tab="chart">실시간 차트</button>
+        <button class="tab" data-tab="richlist">부자 순위</button>
+        <button class="tab" data-tab="burn">소각량</button>
+        <button class="tab" data-tab="exchanges">거래소 거래량</button>
+        <button class="tab" data-tab="premium">프리미엄</button>
+        <button class="tab" data-tab="explorer">주소 조회</button>
+      </nav>
+
+      <section class="panel active" id="panel-chart">
+        <div class="chart-toolbar">
+          <div class="chart-toolbar-left">
+            <span class="chart-symbol" id="chart-symbol-label">XRP/USDT</span>
+            <span class="chart-price" id="chart-price">-</span>
+            <span class="chart-change" id="chart-change">-</span>
+            <span class="chart-status" id="chart-status">로딩 중...</span>
+          </div>
+          <div class="chart-toolbar-right">
+            <div class="chart-meta">
+              <span>고가 <strong id="chart-high">-</strong></span>
+              <span>저가 <strong id="chart-low">-</strong></span>
+              <span>24h 거래량 <strong id="chart-volume">-</strong></span>
+            </div>
+          </div>
+        </div>
+        <div class="chart-controls">
+          <div class="control-group">
+            <span class="control-label">거래소</span>
+            <button class="ctrl-btn active" data-exchange="binance">Binance</button>
+            <button class="ctrl-btn" data-exchange="upbit">Upbit</button>
+          </div>
+          <div class="control-group">
+            <span class="control-label">시간봉</span>
+            <button class="ctrl-btn" data-interval="1m">1분</button>
+            <button class="ctrl-btn" data-interval="5m">5분</button>
+            <button class="ctrl-btn" data-interval="15m">15분</button>
+            <button class="ctrl-btn active" data-interval="1h">1시간</button>
+            <button class="ctrl-btn" data-interval="4h">4시간</button>
+            <button class="ctrl-btn" data-interval="1d">1일</button>
+          </div>
+        </div>
+        <div id="chart-container" class="chart-container"></div>
+      </section>
+
+      <section class="panel" id="panel-richlist">
+        <div class="panel-header">
+          <h2>XRP 부자 순위</h2>
+        </div>
+        <p class="panel-desc">상위 50개 지갑 보유량 (XRPSCAN 기준)</p>
+        <div id="richlist-content" class="loading">데이터 로딩 중...</div>
+      </section>
+
+      <section class="panel" id="panel-burn">
+        <div class="panel-header"><h2>XRP 소각 현황</h2></div>
+        <p class="panel-desc">트랜잭션 수수료로 영구 소각된 XRP</p>
+        <div id="burn-content"></div>
+      </section>
+
+      <section class="panel" id="panel-exchanges">
+        <div class="panel-header"><h2>거래소별 XRP 24h 거래량</h2></div>
+        <p class="panel-desc">CoinGecko 기준 현물 거래량 (USD)</p>
+        <div id="exchanges-content"></div>
+      </section>
+
+      <section class="panel" id="panel-premium">
+        <div class="panel-header"><h2>프리미엄 비율</h2></div>
+        <p class="panel-desc">업비트 KRW 가격 대비 글로벌 거래소 프리미엄</p>
+        <div id="premium-content"></div>
+      </section>
+
+      <section class="panel" id="panel-explorer">
+        <div class="panel-header"><h2>주소 트랜잭션 조회</h2></div>
+        <p class="panel-desc">XRP Ledger에서 해당 주소가 포함된 모든 트랜잭션</p>
+        <div class="search-box">
+          <input
+            type="text"
+            id="address-input"
+            placeholder="XRP 주소 입력 (예: rN7n7otQDd6FczFgLdlqtyMVrn3z7XfX9g)"
+          />
+          <button id="search-btn">조회</button>
+        </div>
+        <div id="tx-content">
+          <p class="footnote">주소를 입력하고 조회 버튼을 눌러주세요.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p class="footer-copy">XRP On-Chain Dashboard</p>
+      <div class="footer-contact">
+        <span>📧 caramel2516@naver.com</span>
+        <span class="contact-divider">|</span>
+        <a href="#" class="kakao-link" data-kakao-id="caramel112">💬 카카오톡 ID <strong>caramel112</strong></a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="/static/chart.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
