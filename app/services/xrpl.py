@@ -1,9 +1,47 @@
+import os
+
 import httpx
 
-XRPL_CLUSTER = "https://xrplcluster.com"
 XRP_SCAN = "https://api.xrpscan.com/api/v1"
 INITIAL_SUPPLY_XRP = 100_000_000_000
 DROPS_PER_XRP = 1_000_000
+
+DEFAULT_XRPL_RPC_URLS = [
+    "https://xrpl.ws",
+    "https://s1.ripple.com:51234",
+    "https://s2.ripple.com:51234",
+]
+XRPL_RPC_URLS = [
+    url.strip()
+    for url in os.environ.get("XRPL_RPC_URL", "").split(",")
+    if url.strip()
+] or DEFAULT_XRPL_RPC_URLS
+XRPL_RETRY_CODES = {402, 403, 429, 500, 502, 503, 504}
+
+
+async def _xrpl_rpc(client: httpx.AsyncClient, method: str, params: list) -> dict:
+    body = {"method": method, "params": params}
+    errors: list[str] = []
+
+    for url in XRPL_RPC_URLS:
+        try:
+            response = await client.post(url, json=body)
+            if response.status_code in XRPL_RETRY_CODES:
+                errors.append(f"{url}: HTTP {response.status_code}")
+                continue
+            response.raise_for_status()
+            data = response.json()
+            result = data.get("result", {})
+            if result.get("status") == "error":
+                errors.append(f"{url}: {result.get('error_message', result.get('error'))}")
+                continue
+            return result
+        except httpx.HTTPStatusError as exc:
+            errors.append(f"{url}: HTTP {exc.response.status_code}")
+        except httpx.RequestError as exc:
+            errors.append(f"{url}: {exc}")
+
+    raise RuntimeError("XRPL RPC 요청 실패 — " + " | ".join(errors))
 
 
 async def fetch_rich_list(limit: int = 100) -> list[dict]:
@@ -34,14 +72,12 @@ async def fetch_rich_list(limit: int = 100) -> list[dict]:
 
 
 async def fetch_burn_stats() -> dict:
-    body = {
-        "method": "ledger",
-        "params": [{"ledger_index": "validated", "transactions": False, "expand": False}],
-    }
     async with httpx.AsyncClient(timeout=15.0) as client:
-        response = await client.post(XRPL_CLUSTER, json=body)
-        response.raise_for_status()
-        ledger = response.json()["result"]["ledger"]
+        ledger = await _xrpl_rpc(
+            client,
+            "ledger",
+            [{"ledger_index": "validated", "transactions": False, "expand": False}],
+        )
 
     total_coins_drops = int(ledger["total_coins"])
     current_supply = total_coins_drops / DROPS_PER_XRP
@@ -65,16 +101,9 @@ async def fetch_account_transactions(
     if marker:
         params["marker"] = marker
 
-    body = {"method": "account_tx", "params": [params]}
     async with httpx.AsyncClient(timeout=20.0) as client:
-        response = await client.post(XRPL_CLUSTER, json=body)
-        data = response.json()
+        result = await _xrpl_rpc(client, "account_tx", [params])
 
-    if data.get("result", {}).get("status") == "error":
-        error = data["result"].get("error_message", data["result"].get("error", "Unknown error"))
-        raise ValueError(error)
-
-    result = data["result"]
     transactions = []
 
     for entry in result.get("transactions", []):
