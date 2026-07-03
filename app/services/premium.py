@@ -5,11 +5,11 @@ BITHUMB_TICKER = "https://api.bithumb.com/public/ticker/XRP_KRW"
 FX_RATE = "https://api.exchangerate-api.com/v4/latest/USD"
 
 GLOBAL_SOURCES = [
-    {"id": "binance", "name": "Binance", "url": "https://api.binance.com/api/v3/ticker/price?symbol=XRPUSDT"},
-    {"id": "coinbase", "name": "Coinbase", "url": "https://api.coinbase.com/v2/prices/XRP-USD/spot"},
     {"id": "kraken", "name": "Kraken", "url": "https://api.kraken.com/0/public/Ticker?pair=XRPUSD"},
+    {"id": "coinbase", "name": "Coinbase", "url": "https://api.coinbase.com/v2/prices/XRP-USD/spot"},
     {"id": "okx", "name": "OKX", "url": "https://www.okx.com/api/v5/market/ticker?instId=XRP-USDT"},
     {"id": "bybit", "name": "Bybit", "url": "https://api.bybit.com/v5/market/tickers?category=spot&symbol=XRPUSDT"},
+    {"id": "binance", "name": "Binance", "url": "https://api.binance.com/api/v3/ticker/price?symbol=XRPUSDT"},
 ]
 
 

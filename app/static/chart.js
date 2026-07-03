@@ -180,6 +180,52 @@
     });
   }
 
+  function usdPriceExchange(dataSource) {
+    return dataSource === "upbit" ? "upbit" : "binance";
+  }
+
+  const KRAKEN_INTERVAL_MAP = { "1m": 1, "5m": 5, "15m": 15, "1h": 60, "4h": 240, "1d": 1440 };
+
+  function connectKrakenWs(interval, wsInterval) {
+    closeWs();
+    const krakenInterval = wsInterval || KRAKEN_INTERVAL_MAP[interval] || 60;
+    ws = new WebSocket("wss://ws.kraken.com");
+    ws.onopen = () => {
+      ws.send(
+        JSON.stringify({
+          event: "subscribe",
+          pair: ["XRP/USD"],
+          subscription: { name: "ohlc", interval: krakenInterval },
+        })
+      );
+      setStatus("실시간 · Kraken", true);
+    };
+    ws.onclose = () => setStatus("연결 끊김", false);
+    ws.onerror = () => setStatus("연결 오류", false);
+    ws.onmessage = (ev) => {
+      let msg;
+      try {
+        msg = JSON.parse(ev.data);
+      } catch {
+        return;
+      }
+      if (!Array.isArray(msg) || msg.length < 2 || !Array.isArray(msg[1])) return;
+      const payload = msg[1];
+      if (payload[0] !== "ohlc-update" || !payload[2]) return;
+      const candle = payload[2];
+      updateLastCandle({
+        time: parseInt(candle.time, 10),
+        open: parseFloat(candle.open),
+        high: parseFloat(candle.high),
+        low: parseFloat(candle.low),
+        close: parseFloat(candle.close),
+        volume: parseFloat(candle.volume),
+      });
+      const priceEl = $("chart-price");
+      if (priceEl) priceEl.textContent = formatPrice(parseFloat(candle.close), "binance");
+    };
+  }
+
   function connectBinanceWs(stream) {
     closeWs();
     ws = new WebSocket(`wss://stream.binance.com:9443/ws/${stream}`);
@@ -239,9 +285,20 @@
     };
   }
 
+  function connectLiveFeed(data) {
+    if (state.exchange === "upbit") {
+      connectUpbitWs(data.ws_unit);
+      return;
+    }
+    if (data.ws_provider === "kraken" || data.data_source === "kraken") {
+      connectKrakenWs(state.interval, data.ws_interval);
+      return;
+    }
+    connectBinanceWs(data.ws_stream);
+  }
+
   async function loadChart() {
     setStatus("로딩 중...", false);
-    $("chart-symbol-label").textContent = state.exchange === "upbit" ? "KRW-XRP" : "XRP/USDT";
 
     const limit = CHART_LIMITS[state.interval] || 300;
 
@@ -259,12 +316,15 @@
         applyPriceFormat();
       }
 
+      $("chart-symbol-label").textContent =
+        data.symbol || (state.exchange === "upbit" ? "KRW-XRP" : "XRP/USDT");
+
       applyCandles(data.candles);
       updateTicker(data.ticker);
-      setStatus(`캔들 ${data.count}개`, true);
+      const note = data.note ? ` · ${data.note}` : "";
+      setStatus(`캔들 ${data.count}개${note}`, true);
 
-      if (state.exchange === "binance") connectBinanceWs(data.ws_stream);
-      else connectUpbitWs(data.ws_unit);
+      connectLiveFeed(data);
     } catch (e) {
       setStatus(e.message, false);
       if ($("chart-container") && !initialized) {
